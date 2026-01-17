@@ -56,7 +56,6 @@ abstract class RunServer : JavaExec() {
                 add("--auth-mode")
                 add(authMode)
             }
-
         })
 
         super.exec()

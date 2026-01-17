@@ -8,8 +8,6 @@ internal data class HytalePaths(
 ) {
     companion object {
         fun resolve(patchline: String): HytalePaths {
-            println("Resolving paths")
-
             val server = System.getenv("HYTADLE_SERVER_PATH")?.let { File(it)}?.takeIf { it.exists() }
             val assets = System.getenv("HYTADLE_ASSETS_PATH")?.let { File(it) }?.takeIf { it.exists() }
 
