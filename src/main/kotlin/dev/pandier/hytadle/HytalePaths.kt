@@ -72,15 +72,12 @@ internal data class HytalePaths(
 
             // Try locating the server in each of those paths
             for (launcherPath in launcherPaths) {
-                val launcherPaths = resolveLauncherNullable(File(launcherPath), patchline)
-
-                if (launcherPaths == null || launcherPaths.assets == null)
-                    continue
+                val launcherPaths = resolveLauncherNullable(File(launcherPath), patchline) ?: continue
 
                 // Use environment variables if set
                 return HytalePaths(
                     server ?: launcherPaths.server,
-                    if (envAot != null || envServer != null) aot else launcherPaths.aot,
+                    if (envAot != null || server != null) aot else launcherPaths.aot,
                     if (envAssets != null) assets else launcherPaths.assets,
                 )
             }
@@ -109,14 +106,15 @@ internal data class HytalePaths(
                 .resolve("latest")
 
             val serverFile = game.resolve("Server").resolve("HytaleServer.jar")
+            val assetsFile = game.resolve("Assets.zip")
 
-            if (!serverFile.exists())
+            if (!serverFile.exists() || !assetsFile.exists())
                 return null
 
             return HytalePaths(
                 serverFile,
                 game.resolve("Server").resolve("HytaleServer.aot").takeIf { it.exists() },
-                game.resolve("Assets.zip").takeIf { it.exists() }?.path,
+                assetsFile.path,
             )
         }
     }
