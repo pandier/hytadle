@@ -1,25 +1,48 @@
 package dev.pandier.hytadle
 
+import org.gradle.api.InvalidUserDataException
 import java.io.File
 
 internal data class HytalePaths(
-    val server: File?,
-    val assets: File?,
+    val server: File,
+    val aot: File?,
+    val assets: String?,
 ) {
     companion object {
-        fun resolve(patchline: String): HytalePaths {
-            val server = System.getenv("HYTADLE_SERVER_PATH")?.let { File(it)}?.takeIf { it.exists() }
-            val assets = System.getenv("HYTADLE_ASSETS_PATH")?.let { File(it) }?.takeIf { it.exists() }
+        private const val HYTADLE_SERVER_PATH = "HYTADLE_SERVER_PATH"
+        private const val HYTADLE_AOT_PATH = "HYTADLE_AOT_PATH"
+        private const val HYTADLE_ASSETS_PATH = "HYTADLE_ASSETS_PATH"
+        private const val HYTADLE_LAUNCHER_PATH = "HYTADLE_LAUNCHER_PATH"
 
-            if (server != null && assets != null) {
-                return HytalePaths(server, assets)
+        fun resolve(patchline: String): HytalePaths {
+            val envServer = System.getenv(HYTADLE_SERVER_PATH)
+            val envAot = System.getenv(HYTADLE_AOT_PATH)
+            val envAssets = System.getenv(HYTADLE_ASSETS_PATH)
+            val envLauncher = System.getenv(HYTADLE_LAUNCHER_PATH)
+
+            val server = envServer?.let { File(it) }
+            if (server?.exists() == false)
+                throw InvalidUserDataException("Couldn't find a Hytale server at $HYTADLE_SERVER_PATH (${envServer})")
+
+            val aot = envAot?.takeIf { it.isNotBlank() }?.let { File(it) }
+            if (aot?.exists() == false)
+                throw InvalidUserDataException("Couldn't find a Hytale server AOT file at $HYTADLE_AOT_PATH (${envAot})")
+
+            val assets = envAssets?.takeIf { it.isNotBlank() }
+
+            // We can return early if all variables are set
+            // We're not checking AOT because if server path is set then the correct AOT for that server should be specified explicitly
+            // (e.g. if we set HYTADLE_SERVER_PATH but not HYTADLE_AOT_PATH, that means we don't have an AOT file)
+            if (server != null && envAssets != null) {
+                return HytalePaths(server, aot, assets)
             }
 
             // Find possible paths for a launcher directory
             val launcherPaths = buildList {
-                val launcherEnv = System.getenv("HYTADLE_LAUNCHER_PATH")
-                if (launcherEnv != null && launcherEnv.isNotBlank()) {
-                    add(launcherEnv)
+                // Only use the environment variable if provided
+                if (envLauncher != null) {
+                    add(envLauncher)
+                    return@buildList
                 }
 
                 val os = System.getProperty("os.name").lowercase()
@@ -49,19 +72,35 @@ internal data class HytalePaths(
 
             // Try locating the server in each of those paths
             for (launcherPath in launcherPaths) {
-                val launcherPaths = resolveLauncher(File(launcherPath), patchline)
+                val launcherPaths = resolveLauncherNullable(File(launcherPath), patchline)
 
-                if (launcherPaths.assets == null || launcherPaths.server == null)
+                if (launcherPaths == null || launcherPaths.assets == null)
                     continue
 
-                // Environment variables have higher priority
-                return HytalePaths(server ?: launcherPaths.server, assets ?: launcherPaths.assets)
+                // Use environment variables if set
+                return HytalePaths(
+                    server ?: launcherPaths.server,
+                    if (envAot != null || envServer != null) aot else launcherPaths.aot,
+                    if (envAssets != null) assets else launcherPaths.assets,
+                )
             }
 
-            return HytalePaths(server, assets)
+            if (envLauncher != null)
+                throw InvalidUserDataException("Couldn't locate Hytale server files at $HYTADLE_LAUNCHER_PATH (${envLauncher})")
+
+            if (server == null)
+                throw InvalidUserDataException("Couldn't locate Hytale server files. Make sure that the game " +
+                        "has been installed through the official launcher or configure the paths explicitly.")
+
+            return HytalePaths(server, aot, assets)
         }
 
         fun resolveLauncher(dir: File, patchline: String): HytalePaths {
+            return resolveLauncherNullable(dir, patchline)
+                ?: throw InvalidUserDataException("Couldn't locate Hytale server files at the provided launcher path")
+        }
+
+        private fun resolveLauncherNullable(dir: File, patchline: String): HytalePaths? {
             val game = dir
                 .resolve("install")
                 .resolve(patchline)
@@ -69,9 +108,15 @@ internal data class HytalePaths(
                 .resolve("game")
                 .resolve("latest")
 
+            val serverFile = game.resolve("Server").resolve("HytaleServer.jar")
+
+            if (!serverFile.exists())
+                return null
+
             return HytalePaths(
-                game.resolve("Server").resolve("HytaleServer.jar").takeIf { it.exists() },
-                game.resolve("Assets.zip").takeIf { it.exists() },
+                serverFile,
+                game.resolve("Server").resolve("HytaleServer.aot").takeIf { it.exists() },
+                game.resolve("Assets.zip").takeIf { it.exists() }?.path,
             )
         }
     }

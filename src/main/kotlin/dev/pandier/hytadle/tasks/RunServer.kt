@@ -6,14 +6,23 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Optional
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.getByType
 import java.io.File
+import javax.inject.Inject
 
-abstract class RunServer : JavaExec() {
+abstract class RunServer @Inject constructor(
+    javaToolchains: JavaToolchainService
+) : JavaExec() {
 
     @get:InputFile
     @get:Optional
-    abstract val assets: Property<File>
+    abstract val aot: Property<File>
+
+    @get:Input
+    @get:Optional
+    abstract val assets: Property<String>
 
     @get:Input
     @get:Optional
@@ -30,18 +39,29 @@ abstract class RunServer : JavaExec() {
     init {
         val hytadle = project.extensions.getByType<HytadleExtension>()
 
-        assets.convention(hytadle.paths.assets)
+        aot.convention(hytadle.aot())
+        assets.convention(hytadle.assets())
         mainClass.convention("com.hypixel.hytale.Main") // TODO: Fetch server jar's MANIFEST instead
-        standardInput = System.`in`
 
-        classpath(hytadle.paths.server)
+        javaLauncher.convention(javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(25))
+        })
+
+        standardInput = System.`in`
+        classpath(hytadle.server())
     }
 
     override fun exec() {
+        jvmArgs(buildList {
+            aot.orNull?.let { aot ->
+                add("-XX:AOTCache=${aot}")
+            }
+        })
+
         args(buildList {
             assets.orNull?.let { assets ->
                 add("--assets")
-                add(assets.toString())
+                add(assets)
             }
 
             if (allowOp.orNull == true) {

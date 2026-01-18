@@ -6,32 +6,40 @@ import org.gradle.api.provider.Property
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.property
 import java.io.File
+import java.util.Optional
 import javax.inject.Inject
 
 abstract class HytadlePathsConfig @Inject constructor(objects: ObjectFactory, private val project: Project) {
 
-    private val hytadle
-        get() = project.extensions.getByType<HytadleExtension>()
+    private val hytadle: HytadleExtension
+        get() = project.extensions.getByType()
 
-    private val defaultPaths by lazy { HytalePaths.resolve(hytadle.patchline.get()) }
-
-    val server: Property<File> = objects.property<File>()
-        .convention(project.provider { defaultPaths.server })
+    val server: Property<File> = objects.property()
 
     fun server(value: File) {
         this.server.set(value)
     }
 
-    val assets: Property<File> = objects.property<File>()
-        .convention(project.provider { defaultPaths.assets })
+    val aot: Property<Optional<File>> = objects.property()
 
-    fun assets(value: File) {
-        this.assets.set(value)
+    fun aot(value: File?) {
+        this.aot.set(Optional.ofNullable(value))
+    }
+
+    val assets: Property<Optional<String>> = objects.property()
+
+    fun assets(value: String?) {
+        this.assets.set(Optional.ofNullable(value))
+    }
+
+    fun assets(value: File?) {
+        this.assets(value?.path)
     }
 
     fun launcher(directory: File) {
         val paths by lazy { HytalePaths.resolveLauncher(directory, hytadle.patchline.get()) }
         this.server.set(project.provider { paths.server })
-        this.assets.set(project.provider { paths.assets })
+        this.aot.set(project.provider { Optional.ofNullable(paths.aot) })
+        this.assets.set(project.provider { Optional.ofNullable(paths.assets) })
     }
 }
