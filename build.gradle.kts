@@ -1,8 +1,11 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    `maven-publish`
+    id("com.gradle.plugin-publish") version "2.0.0"
+    id("org.jetbrains.changelog") version "2.5.0"
 }
+
+val repository = property("repository") as String
 
 repositories {
     mavenCentral()
@@ -10,7 +13,7 @@ repositories {
 
 gradlePlugin {
     website = "https://hytadle.pandier.dev"
-    vcsUrl = "https://github.com/pandier/hytadle.git"
+    vcsUrl = repository
 
     plugins {
         create("hytadle") {
@@ -21,4 +24,9 @@ gradlePlugin {
             implementationClass = "dev.pandier.hytadle.HytadlePlugin"
         }
     }
+}
+
+changelog {
+    groups.empty()
+    repositoryUrl = repository
 }
