@@ -1,5 +1,6 @@
 package dev.pandier.hytadle
 
+import dev.pandier.hytadle.internal.HytalePaths
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -14,32 +15,41 @@ abstract class HytadlePathsConfig @Inject constructor(objects: ObjectFactory, pr
     private val hytadle: HytadleExtension
         get() = project.extensions.getByType()
 
+    /**
+     * The `HytaleServer.jar` file.
+     */
     val server: Property<File> = objects.property()
 
     fun server(value: File) {
-        this.server.set(value)
+        server.set(value)
     }
 
+    /**
+     * The `HytaleServer.aot` file.
+     */
     val aot: Property<Optional<File>> = objects.property()
 
     fun aot(value: File?) {
-        this.aot.set(Optional.ofNullable(value))
+        aot.set(Optional.ofNullable(value))
     }
 
+    /**
+     * The `Assets.zip` file.
+     */
     val assets: Property<Optional<String>> = objects.property()
 
     fun assets(value: String?) {
-        this.assets.set(Optional.ofNullable(value))
+        assets.set(Optional.ofNullable(value))
     }
 
     fun assets(value: File?) {
-        this.assets(value?.path)
+        assets(value?.absolutePath)
     }
 
     fun launcher(directory: File) {
         val paths by lazy { HytalePaths.resolveLauncher(directory, hytadle.patchline.get()) }
-        this.server.set(project.provider { paths.server })
-        this.aot.set(project.provider { Optional.ofNullable(paths.aot) })
-        this.assets.set(project.provider { Optional.ofNullable(paths.assets) })
+        server.set(project.provider { paths.server })
+        aot.set(project.provider { Optional.ofNullable(paths.aot) })
+        assets.set(project.provider { Optional.ofNullable(paths.assets) })
     }
 }

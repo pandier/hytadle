@@ -1,6 +1,6 @@
 package dev.pandier.hytadle
 
-import dev.pandier.hytadle.tasks.RunServer
+import dev.pandier.hytadle.tasks.RunServerTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
@@ -19,20 +19,19 @@ class HytadlePlugin : Plugin<Project> {
         project.pluginManager.withPlugin("java") {
             val sourceSets = project.extensions.getByType<SourceSetContainer>()
 
-            project.tasks.register<RunServer>("runServer") {
+            project.tasks.register<RunServerTask>("runServer") {
                 group = TASK_GROUP
                 description = "Runs the Hytale server for plugin development"
-                allowOp.set(true)
-                disableSentry.set(true)
 
-                workingDir(project.layout.projectDirectory.dir("run"))
                 classpath({ sourceSets.getByName("main").runtimeClasspath })
             }
         }
 
         project.afterEvaluate {
-            if (hytadle.includeDependency.get()) {
-                dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, hytadle.serverDependency())
+            pluginManager.withPlugin("java") {
+                if (hytadle.enableDependency.get()) {
+                    dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, hytadle.serverDependency())
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 package dev.pandier.hytadle
 
-import org.gradle.api.InvalidUserDataException
+import dev.pandier.hytadle.internal.DefaultHytadleRuntimeConfig
+import dev.pandier.hytadle.internal.HytalePaths
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.model.ObjectFactory
@@ -11,32 +12,59 @@ import org.gradle.kotlin.dsl.property
 import java.io.File
 import java.util.Optional
 import javax.inject.Inject
-import kotlin.jvm.optionals.getOrNull
 
 abstract class HytadleExtension @Inject constructor(objects: ObjectFactory, private val project: Project) {
 
     private val defaultPaths by lazy { HytalePaths.resolve(patchline.get()) }
 
+    /**
+     * The patchline (e.g., release, pre-release) used when locating game files.
+     */
     val patchline: Property<String> = objects.property<String>().convention("release")
 
-    fun patchline(value: String?) {
-        this.patchline.set(value)
-    }
-
+    /**
+     * Overrides for individual paths of game files.
+     */
     val paths: HytadlePathsConfig = objects.newInstance<HytadlePathsConfig>()
 
     fun paths(block: HytadlePathsConfig.() -> Unit) {
-        this.paths.apply(block)
+        paths.apply(block)
     }
 
-    val includeDependency: Property<Boolean> = objects.property<Boolean>().convention(true)
+    /**
+     * Configuration for the runtime of a local server.
+     */
+    val runtime: HytadleRuntimeConfig = objects.newInstance<DefaultHytadleRuntimeConfig>()
 
-    fun includeDependency(value: Boolean) {
-        this.includeDependency.set(value)
+    fun runtime(value: HytadleRuntimeConfig.() -> Unit) {
+        runtime.apply(value)
     }
 
+    /**
+     * If enabled, the Hytale server will be added as a dependency.
+     */
+    val enableDependency: Property<Boolean> = objects.property<Boolean>().convention(true)
+
+    /**
+     * @see enableDependency
+     */
+    fun disableDependency() {
+        enableDependency.set(false)
+    }
+
+    /**
+     * Disables the AOT cache file.
+     *
+     * This is a shorthand for:
+     *
+     * ```kts
+     * paths {
+     *     aot(null)
+     * }
+     * ```
+     */
     fun disableAot() {
-        this.paths.aot(null)
+        paths.aot(null)
     }
 
     fun server(): Provider<File> {
@@ -51,12 +79,12 @@ abstract class HytadleExtension @Inject constructor(objects: ObjectFactory, priv
         // Don't fall back to defaults if server is set explicitly
         return paths.aot
             .orElse(project.provider { Optional.ofNullable(if (paths.server.orNull == null) defaultPaths.aot else null) })
-            .map { it.getOrNull() }
+            .map { it.orElse(null) }
     }
 
     fun assets(): Provider<String> {
         return paths.assets
             .orElse(project.provider { Optional.ofNullable(defaultPaths.assets) })
-            .map { it.getOrNull() }
+            .map { it.orElse(null) }
     }
 }

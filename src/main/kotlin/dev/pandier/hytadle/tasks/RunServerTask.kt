@@ -1,65 +1,52 @@
 package dev.pandier.hytadle.tasks
 
 import dev.pandier.hytadle.HytadleExtension
+import dev.pandier.hytadle.HytadleRuntimeConfig
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Optional
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.getByType
-import java.io.File
 import javax.inject.Inject
 
-abstract class RunServer @Inject constructor(
+abstract class RunServerTask @Inject constructor(
     javaToolchains: JavaToolchainService
-) : JavaExec() {
+) : JavaExec(), HytadleRuntimeConfig {
 
-    @get:InputFile
-    @get:Optional
-    abstract val aot: Property<File>
+    @get:Input
+    abstract override val allowOp: Property<Boolean>
 
     @get:Input
     @get:Optional
-    abstract val assets: Property<String>
+    abstract override val authMode: Property<String>
 
     @get:Input
-    @get:Optional
-    abstract val authMode: Property<String>
-
-    @get:Input
-    @get:Optional
-    abstract val allowOp: Property<Boolean>
-
-    @get:Input
-    @get:Optional
-    abstract val disableSentry: Property<Boolean>
+    abstract override val disableSentry: Property<Boolean>
 
     init {
         val hytadle = project.extensions.getByType<HytadleExtension>()
-
-        aot.convention(hytadle.aot())
-        assets.convention(hytadle.assets())
-        mainClass.convention("com.hypixel.hytale.Main") // TODO: Fetch server jar's MANIFEST instead
+        hytadle.runtime.copyTo(this)
 
         javaLauncher.convention(javaToolchains.launcherFor {
             languageVersion.set(JavaLanguageVersion.of(25))
         })
-
-        standardInput = System.`in`
-        classpath(hytadle.server())
     }
 
     override fun exec() {
+        val hytadle = project.extensions.getByType<HytadleExtension>()
+
+        classpath(hytadle.server())
+
         jvmArgs(buildList {
-            aot.orNull?.let { aot ->
+            hytadle.aot().orNull?.let { aot ->
                 add("-XX:AOTCache=${aot}")
             }
         })
 
         args(buildList {
-            assets.orNull?.let { assets ->
+            hytadle.assets().orNull?.let { assets ->
                 add("--assets")
                 add(assets)
             }
@@ -78,6 +65,14 @@ abstract class RunServer @Inject constructor(
             }
         })
 
+        if (!workingDir.exists()) {
+            workingDir.mkdirs()
+        }
+
         super.exec()
+    }
+
+    override fun copyTo(target: HytadleRuntimeConfig) {
+        throw UnsupportedOperationException()
     }
 }

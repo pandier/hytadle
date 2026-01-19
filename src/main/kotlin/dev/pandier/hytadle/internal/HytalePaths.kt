@@ -1,4 +1,4 @@
-package dev.pandier.hytadle
+package dev.pandier.hytadle.internal
 
 import org.gradle.api.InvalidUserDataException
 import java.io.File
@@ -83,18 +83,21 @@ internal data class HytalePaths(
             }
 
             if (envLauncher != null)
-                throw InvalidUserDataException("Couldn't locate Hytale server files at $HYTADLE_LAUNCHER_PATH (${envLauncher})")
+                throw InvalidUserDataException("Couldn't locate Hytale server files for patchline " +
+                        "'${patchline}' at $HYTADLE_LAUNCHER_PATH (${envLauncher})")
 
             if (server == null)
-                throw InvalidUserDataException("Couldn't locate Hytale server files. Make sure that the game " +
-                        "has been installed through the official launcher or configure the paths explicitly.")
+                throw InvalidUserDataException("Couldn't locate Hytale server files for patchline " +
+                        "'${patchline}'. Make sure that the game has been installed through the official launcher " +
+                        "with the correct patchline, or configure the paths explicitly.")
 
             return HytalePaths(server, aot, assets)
         }
 
         fun resolveLauncher(dir: File, patchline: String): HytalePaths {
             return resolveLauncherNullable(dir, patchline)
-                ?: throw InvalidUserDataException("Couldn't locate Hytale server files at the provided launcher path")
+                ?: throw InvalidUserDataException("Couldn't locate Hytale server files for patchline " +
+                        "'${patchline}' at the provided launcher path (${dir.absolutePath})")
         }
 
         private fun resolveLauncherNullable(dir: File, patchline: String): HytalePaths? {
