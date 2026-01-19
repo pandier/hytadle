@@ -2,6 +2,7 @@ package dev.pandier.hytadle
 
 import dev.pandier.hytadle.internal.DefaultHytadleRuntimeConfig
 import dev.pandier.hytadle.internal.HytalePaths
+import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.model.ObjectFactory
@@ -27,8 +28,8 @@ abstract class HytadleExtension @Inject constructor(objects: ObjectFactory, priv
      */
     val paths: HytadlePathsConfig = objects.newInstance<HytadlePathsConfig>()
 
-    fun paths(block: HytadlePathsConfig.() -> Unit) {
-        paths.apply(block)
+    fun paths(action: Action<HytadlePathsConfig>) {
+        action.execute(paths)
     }
 
     /**
@@ -36,8 +37,8 @@ abstract class HytadleExtension @Inject constructor(objects: ObjectFactory, priv
      */
     val runtime: HytadleRuntimeConfig = objects.newInstance<DefaultHytadleRuntimeConfig>()
 
-    fun runtime(value: HytadleRuntimeConfig.() -> Unit) {
-        runtime.apply(value)
+    fun runtime(action: Action<HytadleRuntimeConfig>) {
+        action.execute(runtime)
     }
 
     /**
