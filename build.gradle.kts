@@ -5,15 +5,13 @@ plugins {
     id("org.jetbrains.changelog") version "2.5.0"
 }
 
-val repository = property("repository") as String
-
 repositories {
     mavenCentral()
 }
 
 gradlePlugin {
     website = "https://hytadle.pandier.dev"
-    vcsUrl = repository
+    vcsUrl = "https://github.com/pandier/hytadle.git"
 
     plugins {
         create("hytadle") {
@@ -28,5 +26,5 @@ gradlePlugin {
 
 changelog {
     groups.empty()
-    repositoryUrl = repository
+    repositoryUrl = "https://github.com/pandier/hytadle"
 }

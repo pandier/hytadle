@@ -28,7 +28,7 @@ At the top of your `build.gradle(.kts)` file, add the following code:
 ```kts
 plugins {
     java
-    id("dev.pandier.hytadle") version "0.0.0"
+    id("dev.pandier.hytadle") version "0.1.0"
 }
 ```
 
