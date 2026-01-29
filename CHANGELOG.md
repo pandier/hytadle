@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `javaLauncher` property in the `runtime` block for modifying the [`JavaLauncher`](https://docs.gradle.org/current/javadoc/org/gradle/jvm/toolchain/JavaLauncher.html).
+
+### Changed
+
+- The `runServer` task no longer forces Java 25 by default
+
 ## [0.1.0] - 2026-01-20
 
 Initial release

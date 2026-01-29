@@ -1,37 +1,31 @@
 package dev.pandier.hytadle.tasks
 
 import dev.pandier.hytadle.HytadleExtension
-import dev.pandier.hytadle.HytadleRuntimeConfig
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Optional
-import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.getByType
-import javax.inject.Inject
 
-abstract class RunServerTask @Inject constructor(
-    javaToolchains: JavaToolchainService
-) : JavaExec(), HytadleRuntimeConfig {
+abstract class RunServerTask : JavaExec() {
 
     @get:Input
-    abstract override val allowOp: Property<Boolean>
+    abstract val allowOp: Property<Boolean>
 
     @get:Input
     @get:Optional
-    abstract override val authMode: Property<String>
+    abstract val authMode: Property<String>
 
     @get:Input
-    abstract override val disableSentry: Property<Boolean>
+    abstract val disableSentry: Property<Boolean>
 
     init {
-        val hytadle = project.extensions.getByType<HytadleExtension>()
-        hytadle.runtime.copyTo(this)
-
-        javaLauncher.convention(javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(25))
-        })
+        val runtime = project.extensions.getByType<HytadleExtension>().runtime
+        runtime.copyTo(this)
+        allowOp.set(runtime.allowOp)
+        authMode.set(runtime.authMode)
+        disableSentry.set(runtime.disableSentry)
+        javaLauncher.set(runtime.javaLauncher)
     }
 
     override fun exec() {
@@ -40,8 +34,10 @@ abstract class RunServerTask @Inject constructor(
         classpath(hytadle.server())
 
         jvmArgs(buildList {
-            hytadle.aot().orNull?.let { aot ->
-                add("-XX:AOTCache=${aot}")
+            if (javaLauncher.get().metadata.languageVersion.asInt() >= 25) {
+                hytadle.aot().orNull?.let { aot ->
+                    add("-XX:AOTCache=${aot}")
+                }
             }
         })
 
@@ -70,9 +66,5 @@ abstract class RunServerTask @Inject constructor(
         }
 
         super.exec()
-    }
-
-    override fun copyTo(target: HytadleRuntimeConfig) {
-        throw UnsupportedOperationException()
     }
 }
