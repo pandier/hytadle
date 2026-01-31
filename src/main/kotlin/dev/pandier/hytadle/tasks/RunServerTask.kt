@@ -1,10 +1,12 @@
 package dev.pandier.hytadle.tasks
 
 import dev.pandier.hytadle.HytadleExtension
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.internal.JavaExecExecutableUtils
 import org.gradle.kotlin.dsl.getByType
 
 abstract class RunServerTask : JavaExec() {
@@ -25,7 +27,15 @@ abstract class RunServerTask : JavaExec() {
         allowOp.set(runtime.allowOp)
         authMode.set(runtime.authMode)
         disableSentry.set(runtime.disableSentry)
-        javaLauncher.set(runtime.javaLauncher)
+
+        val javaPluginExtension = project.extensions.getByType<JavaPluginExtension>()
+
+        val defaultToolchainSpec = project.provider {
+            JavaExecExecutableUtils.getExecutableOverrideToolchainSpec(this, propertyFactory)
+        }.orElse(javaPluginExtension.toolchain)
+        val defaultJavaLauncher = defaultToolchainSpec.flatMap(javaToolchainService::launcherFor)
+
+        javaLauncher.set(runtime.javaLauncher.orElse(defaultJavaLauncher))
     }
 
     override fun exec() {
