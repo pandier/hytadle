@@ -28,5 +28,7 @@ open class DefaultHytadleRuntimeConfig @Inject constructor(
         workingDir = projectLayout.projectDirectory.dir("run").asFile
         standardInput = System.`in`
         mainClass.convention("com.hypixel.hytale.Main") // TODO: Fetch server jar's MANIFEST instead
+
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
     }
 }

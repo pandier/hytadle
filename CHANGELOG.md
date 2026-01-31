@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The `runServer` task no longer forces Java 25 by default
+- Add the `--enable-native-access=ALL-UNNAMED` JVM argument to server runtime by default
 
 ## [0.1.0] - 2026-01-20
 
