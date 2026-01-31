@@ -4,8 +4,6 @@ import dev.pandier.hytadle.tasks.RunServerTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.tasks.SourceSetContainer
-import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
 class HytadlePlugin : Plugin<Project> {
@@ -14,21 +12,15 @@ class HytadlePlugin : Plugin<Project> {
     }
 
     override fun apply(project: Project) {
-        val hytadle = project.extensions.create("hytadle", HytadleExtension::class.java)
-
         project.pluginManager.withPlugin("java") {
-            val sourceSets = project.extensions.getByType<SourceSetContainer>()
+            val hytadle = project.extensions.create("hytadle", HytadleExtension::class.java)
 
             project.tasks.register<RunServerTask>("runServer") {
                 group = TASK_GROUP
                 description = "Runs the Hytale server for plugin development"
-
-                classpath({ sourceSets.getByName("main").runtimeClasspath })
             }
-        }
 
-        project.afterEvaluate {
-            pluginManager.withPlugin("java") {
+            project.afterEvaluate {
                 if (hytadle.enableDependency.get()) {
                     dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, hytadle.serverDependency())
                 }

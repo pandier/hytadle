@@ -6,6 +6,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.internal.JavaExecExecutableUtils
 import org.gradle.kotlin.dsl.getByType
 
@@ -21,12 +22,18 @@ abstract class RunServerTask : JavaExec() {
     @get:Input
     abstract val disableSentry: Property<Boolean>
 
+    @get:Input
+    @get:Optional
+    abstract val source: Property<SourceSet>
+
     init {
         val runtime = project.extensions.getByType<HytadleExtension>().runtime
         runtime.copyTo(this)
+
         allowOp.set(runtime.allowOp)
         authMode.set(runtime.authMode)
         disableSentry.set(runtime.disableSentry)
+        source.set(runtime.source)
 
         val javaPluginExtension = project.extensions.getByType<JavaPluginExtension>()
 
@@ -42,6 +49,10 @@ abstract class RunServerTask : JavaExec() {
         val hytadle = project.extensions.getByType<HytadleExtension>()
 
         classpath(hytadle.server())
+
+        source.orNull?.let { source ->
+            classpath(source.runtimeClasspath)
+        }
 
         jvmArgs(buildList {
             if (javaLauncher.get().metadata.languageVersion.asInt() >= 25) {

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `javaLauncher` property in the `runtime` block for modifying the [`JavaLauncher`](https://docs.gradle.org/current/javadoc/org/gradle/jvm/toolchain/JavaLauncher.html).
+- Add `source` property in the `runtime` block for modifying the source set that is added to the classpath
 
 ### Changed
 
