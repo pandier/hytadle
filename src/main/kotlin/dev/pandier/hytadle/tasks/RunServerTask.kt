@@ -43,6 +43,8 @@ abstract class RunServerTask : JavaExec() {
         val defaultJavaLauncher = defaultToolchainSpec.flatMap(javaToolchainService::launcherFor)
 
         javaLauncher.set(runtime.javaLauncher.orElse(defaultJavaLauncher))
+
+        dependsOn(source.map { it.classesTaskName })
     }
 
     override fun exec() {
